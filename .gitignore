@@ -1,0 +1,8 @@
+
+#ignore these folders
+bin!/
+build!/
+lib!/
+msg_gen!/
+src!/
+*~

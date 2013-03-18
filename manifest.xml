@@ -1,0 +1,19 @@
+<package>
+  <description brief="p3a_delta">
+
+    First part of the third project: map an arena. 
+
+  </description>
+  <author>Westin Breger</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/p3a_delta</url>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="serializer"/>
+  <depend package="geometry_msgs"/>
+  <depend package="gmapping"/>
+
+</package>
+
+
