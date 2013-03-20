@@ -1,5 +1,5 @@
-int zone1
-int zone2
-int zone3
+int16 zone1
+int16 zone2
+int16 zone3
 
 
