@@ -26,7 +26,7 @@
 using namespace std;
 
 sensor_msgs::LaserScan now;
-
+const int ZONE_COUNT = 3;
 void loadLaser(const sensor_msgs::LaserScan& msg);
 
 
@@ -44,9 +44,9 @@ int main(int argc, char **argv)
 	ros::Subscriber info_get = nh.subscribe("scan", 500, loadLaser);
 	ros::Publisher info_pub1 = nh.advertise<p3a_delta::zoneCount>("zones", 50);
 	
-	int zoneSize = now.ranges.size() / 3;
+	int zoneSize = now.ranges.size() / ZONE_COUNT;
 	int currentZone = 0;
-	int counts[3] = {0,0,0};
+	int counts[ZONE_COUNT];
 	
 
 	while(ros::ok())
@@ -54,36 +54,20 @@ int main(int argc, char **argv)
 		//parse points
 		for (int i = 0; i < now.ranges.size(); i++)
 		{
-			if ( i < (currentZone +1) * zoneSize)
-			{
-				currentZone = 0;
-			}
-			if ( i < (currentZone + 2) * zoneSize && i > (currentZone +1) * zoneSize )
-			{
-				currentZone = 1;
-			}
-			if (i > (currentZone + 2) * zoneSize)
-			{
-				currentZone = 3;
-			}
-			
+			currentZone = i/ zoneSize;	
+			if(currentZone >= ZONE_COUNT)
+				exit(9001);
 			//is it in an acceptable range?
-			if ( !(now.ranges[i] >.6f && now.ranges[i] < 3))
+			if ( !(now.ranges[i] >0.04f && now.ranges[i] < 0.25f))
 			{
 				counts[currentZone] ++;
-			}
-			
-		}
-			
-			
-		outBound.zone1 = counts[0];
-		outBound.zone2 = counts[1];
-		outBound.zone3 = counts[2];	
-
-		
+			}		
+		}	
+		outBound.zone.erase(outBound.zone.begin(), outBound.zone.end()); 
+		for(int i = 0;  i< ZONE_COUNT; i++)
+			outBound.zone.push_back(counts[i]);	
+	
 		info_pub1.publish(outBound);
-
-
 		ros::spinOnce();
 		loop_rate.sleep();
 
