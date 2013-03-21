@@ -6,6 +6,7 @@
 #define OB_SIZE 7
 #define THRESHOLD 1.0f
 #define MIN_POINT_COUNT 20
+#define MIN_SCAN_DIST 0.04f
 #define PI 3.14592f
 
 #include "ros/ros.h"
@@ -40,6 +41,8 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10); 
 	p3a_delta::zoneCount  outBound;
+	outBound.angleIncrement = now.angle_increment;
+	outBound.minScanDistance = MIN_SCAN_DIST;
   
 	ros::Subscriber info_get = nh.subscribe("scan", 500, loadLaser);
 	ros::Publisher info_pub1 = nh.advertise<p3a_delta::zoneCount>("zones", 50);
@@ -58,7 +61,7 @@ int main(int argc, char **argv)
 			if(currentZone >= ZONE_COUNT)
 				exit(9001);
 			//is it in an acceptable range?
-			if ( !(now.ranges[i] >0.04f && now.ranges[i] < 0.25f))
+			if ( !(now.ranges[i] > MIN_SCAN_DIST && now.ranges[i] < 0.25f))
 			{
 				counts[currentZone] ++;
 			}		
