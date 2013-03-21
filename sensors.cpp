@@ -6,7 +6,7 @@
 #define OB_SIZE 7
 #define THRESHOLD 1.0f
 #define MIN_POINT_COUNT 20
-#define MIN_SCAN_DIST 0.04f
+#define MIN_SCAN_DIST 0.07f
 #define PI 3.14592f
 
 #include "ros/ros.h"
@@ -27,7 +27,7 @@
 using namespace std;
 
 sensor_msgs::LaserScan now;
-const int ZONE_COUNT = 3;
+const int ZONE_COUNT = 7;
 void loadLaser(const sensor_msgs::LaserScan& msg);
 
 
@@ -39,22 +39,24 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "p3_delta_sensors");
 	ros::NodeHandle nh;
 
-	ros::Rate loop_rate(10); 
+	ros::Rate loop_rate(50); 
 	p3a_delta::zoneCount  outBound;
+	ROS_INFO("STARTING");
 	outBound.pointNum = now.ranges.size();
 	outBound.angleIncrement = now.angle_increment;
 	outBound.minScanDist = MIN_SCAN_DIST;
   
 	ros::Subscriber info_get = nh.subscribe("scan", 500, loadLaser);
-	ros::Publisher info_pub1 = nh.advertise<p3a_delta::zoneCount>("zones", 50);
+	ros::Publisher info_pub1 = nh.advertise<p3a_delta::zoneCount>("zones", 100);
 	
-	int zoneSize = now.ranges.size() / ZONE_COUNT;
+	int zoneSize = 0;
 	int currentZone = 0;
 	int counts[ZONE_COUNT];
 	
 
 	while(ros::ok())
 	{
+		ROS_INFO("IN LOOP");
 		outBound.pointNum = now.ranges.size();
 		outBound.angleIncrement = now.angle_increment;
 		outBound.minScanDist = MIN_SCAN_DIST;
@@ -66,15 +68,19 @@ int main(int argc, char **argv)
 			loop_rate.sleep();
 			continue;
 		}
-		
+		zoneSize = now.ranges.size() / ZONE_COUNT;
+		currentZone = 0;
 		//parse points
+		
+		for(int i = 0; i < ZONE_COUNT; i++)
+			counts[i] = 0;
+		
 		for (int i = 0; i < now.ranges.size(); i++)
 		{
 			currentZone = i/ zoneSize;	
-			if(currentZone >= ZONE_COUNT)
-				exit(9001);
+
 			//is it in an acceptable range?
-			if ( !(now.ranges[i] > MIN_SCAN_DIST && now.ranges[i] < 0.25f))
+			if ( (now.ranges[i] > MIN_SCAN_DIST && now.ranges[i] < 0.25f))
 			{
 				counts[currentZone] ++;
 			}		

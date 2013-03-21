@@ -23,8 +23,8 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10);
   
-	ros::Subscriber info_get = nh.subscribe("command", 10, getCommand);
-	ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+	ros::Subscriber info_get = nh.subscribe("command", 100, getCommand);
+	ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 100);
 	
 	while(ros::ok())
 	{
@@ -62,11 +62,11 @@ geometry_msgs::Twist getTwistMsg()
 	  break;
 	case 1:
 	  twist.linear.x = 0.0f;
-          twist.angular.z = 0.3f;	
+          twist.angular.z = 1.0f;	
 	  break;
 	case 2:
 	  twist.linear.x = 0.0f;
-          twist.angular.z = -0.3f;	
+          twist.angular.z = -1.0f;	
 	  break;
 	case 3:
 	  twist.linear.x = -0.25f;

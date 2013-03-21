@@ -32,6 +32,7 @@ bool tryingBackward;
 enum zoneStates {FREE, OCCUPIED, TRIPPED};
 
 //void getCurrCommand(const p3a_delta::command& msg);
+void getCurrZones(const p3a_delta::zoneCount msg);
 
 void checkSensorChange(const serializer::SensorState& msg);
 void doNothing(p3a_delta::command &msg);
@@ -45,7 +46,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "p3_delta_ai");
   ros::NodeHandle n;
 
-  ros::Publisher commandPub = n.advertise<p3a_delta::command>("command", 10);
+  ros::Publisher commandPub = n.advertise<p3a_delta::command>("command", 100);
 
   p3a_delta::command outBound;
   
@@ -53,14 +54,12 @@ int main(int argc, char **argv)
 
 ros::Rate loop_rate(10);
 
-  //the state messenger doesn't need the same resolution as the cmd::velocity channel.  
-//Thus, we only publish 5 times a second.
-  ros::Publisher command_pub = n.advertise<geometry_msgs::Twist>("FState", 5);
+
 
 ros::topic::waitForMessage<nav_msgs::Odometry>(std::string("odom"), n,ros::Duration(30));
     geometry_msgs::Twist msg;
 
-	ros::Subscriber subz = n.subscribe("p3a_delta/zoneCount", 10, checkSensorChange);
+	ros::Subscriber subz = n.subscribe("zones", 101, getCurrZones);
 
    //we listen a little faster than we publish, since we don't know when it will change
     ros::Subscriber subc = n.subscribe("serializer/sensors", 10, checkSensorChange);
@@ -72,16 +71,16 @@ ros::topic::waitForMessage<nav_msgs::Odometry>(std::string("odom"), n,ros::Durat
 ROS_INFO("STARTING LOOP");
 
 //how many zones are we talkin'
-int zoneCount;// = zones.zone.size();
-int zonePointSize;// = zones.pointNum / zoneCount;
-float zoneAngleSize;// = zonePointSize * zones.angleIncrement;
+int zoneCount = 0;// = zones.zone.size();
+int zonePointSize = 0;// = zones.pointNum / zoneCount;
+float zoneAngleSize = 0.0f;// = zonePointSize * zones.angleIncrement;
 vector<zoneStates> states;
 //states.resize(zoneCount);
 
 //how many zones open do we need to go forward?
-float lsquared;// = zones.minScanDist * zones.minScanDist;
-float angleMinOpen;// = acos((robotWidth*robotWidth - 2 * lsquared)/(2 * lsquared));
-int zoneMinOpen;// = angleMinOpen / (zonePointSize * zones.angleIncrement);
+float lsquared = 0.0f;// = zones.minScanDist * zones.minScanDist;
+float angleMinOpen = 0.0f;// = acos((robotWidth*robotWidth - 2 * lsquared)/(2 * lsquared));
+int zoneMinOpen = 0;// = angleMinOpen / (zonePointSize * zones.angleIncrement);
 //if (zoneMinOpen == 0)
 //	zoneMinOpen = 1;
 	
@@ -100,7 +99,6 @@ int k = 0;
 
 while(ros::ok())
 {
-	ROS_INFO("GOT INTO LOOP %d", zoneCount);
 	zoneCount = zones.zone.size();
 	
 	if (zoneCount == 0)
@@ -142,7 +140,7 @@ while(ros::ok())
 		}
 	}
 	
-	//rotate from the left, take the last free zone detected
+	//rotate from the right, take the last free zone detected
 	count = 0;
 	fromRight = true;
 	for (int i = zoneCount-1; i >= 0; i--)
@@ -158,7 +156,7 @@ while(ros::ok())
 	//the immediate right is blocked
 	if ( count == 0)
 	{
-		ROS_INFO("LEFT BLOCKED");
+		ROS_INFO("RIGHT BLOCKED");
 		fromRight = false;
 		count = 0;
 		//search from right
@@ -171,17 +169,17 @@ while(ros::ok())
 			else
 				break;
 		}
-		//shit, the right is blocked
+		//shit, the left is blocked
 		if(count == 0)
 		{
-			ROS_INFO("RIGHT BLOCKED");
+			ROS_INFO("LEFT BLOCKED");
 			//forward maybe?
 			forwardRight = true;
 			forwardLeft = true;
 			k = 0;
 			while ((forwardLeft || forwardRight) && (k < (zoneCount/2)))
 			{
-				//check left
+				//check rightward from center
 				if(states[zoneCount/2 -k] == FREE)
 				{
 					left++;
@@ -191,7 +189,7 @@ while(ros::ok())
 					forwardLeft = false;
 				}
 				
-				//check right
+				//check leftward from center
 				if(states[zoneCount/2 +k] == FREE)
 				{
 					right++;
@@ -248,7 +246,7 @@ while(ros::ok())
 			}
 			else 
 			{
-				outBound.turnRight = true;
+				outBound.turnLeft = true;
 			}
 		}
 		else if(!fromRight)
@@ -261,7 +259,7 @@ while(ros::ok())
 			}
 			else 
 			{
-				outBound.turnLeft = true;
+				outBound.turnRight = true;
 			}
 		}
 	}
