@@ -1,6 +1,6 @@
 
 #define OCC_THRESHOLD .15f
-#define TRIP_THRESHOLD .4f
+#define TRIP_THRESHOLD .3f
 #define OFFCENTER 2
 
 #define robotWidth .29f
@@ -46,13 +46,13 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "p3_delta_ai");
   ros::NodeHandle n;
 
-  ros::Publisher commandPub = n.advertise<p3a_delta::command>("command", 10);
+  ros::Publisher commandPub = n.advertise<p3a_delta::command>("command", 100);
 
   p3a_delta::command outBound;
   
   bool escape = false;
 
-ros::Rate loop_rate(5);
+ros::Rate loop_rate(10);
 
 
 
@@ -87,10 +87,16 @@ int zoneMinOpen = 0;// = angleMinOpen / (zonePointSize * zones.angleIncrement);
 float totalRange = zones.pointNum * zones.angleIncrement;
 
 int count = 0;
+bool fromRight = true;
+bool forwardOpen = true;
+int left = 0;
+int right = 0;
+bool forwardRight = true;
+bool forwardLeft = true;
+int k = 0;
+	
 
-bool justBackedUp = false;
-bool sleep = false;
-bool justWentForward = false;
+
 while(ros::ok())
 {
 	zoneCount = zones.zone.size();
@@ -101,7 +107,7 @@ while(ros::ok())
 		loop_rate.sleep();
 		continue;
 	}
-	
+	ROS_INFO("ESCAPED DEADLOCK");
 		
 	zonePointSize = zones.pointNum / zoneCount;
 	zoneAngleSize = zonePointSize * zones.angleIncrement;
@@ -122,6 +128,10 @@ while(ros::ok())
 	{
 		if( (zones.zone[i]/(float(zonePointSize))) >= TRIP_THRESHOLD)
 		{
+			states[i] = TRIPPED;
+		}
+		else if( (zones.zone[i]/(float(zonePointSize))) >= OCC_THRESHOLD)
+		{
 			states[i] = OCCUPIED;
 		}
 		else
@@ -132,64 +142,134 @@ while(ros::ok())
 	
 	//rotate from the right, take the last free zone detected
 	count = 0;
-	for (int i = 0; i < zoneCount; i++)
+	fromRight = true;
+	for (int i = zoneCount-1; i >= 0; i--)
 	{
 		if(states[i] == FREE)
+		{
 			count++;
-	
-	}
-	ROS_INFO("Count %d",count);
-	//everything blocked
-	if ( count == 0)
-	{
-			outBound.backUp = true;
-			justBackedUp = true;
-	}	
-	//nothing blocking
-	else if (count == zoneCount){
-		if(justBackedUp){
-			outBound.turnRight = true;
-			sleep = true;
-			justBackedUp = false;
-		}
-		else if(justWentForward){
-		 	outBound.turnLeft = true;
-		 	justWentForward = false;
-		 	sleep = true;
 		}
 		else
+			break;
+	}
+	
+	//the immediate right is blocked
+	if ( count == 0)
+	{
+		ROS_INFO("RIGHT BLOCKED");
+		fromRight = false;
+		count = 0;
+		//search from right
+		for (int i = 0; i < zoneCount; i++)
+		{
+			if(states[i] == FREE)
+			{
+				count++;
+			}
+			else
+				break;
+		}
+		//shit, the left is blocked
+		if(count == 0)
+		{
+			ROS_INFO("LEFT BLOCKED");
+			//forward maybe?
+			forwardRight = true;
+			forwardLeft = true;
+			k = 0;
+			while ((forwardLeft || forwardRight) && (k < (zoneCount/2)))
+			{
+				//check rightward from center
+				if(states[zoneCount/2 -k] == FREE)
+				{
+					left++;
+				}
+				else
+				{
+					forwardLeft = false;
+				}
+				
+				//check leftward from center
+				if(states[zoneCount/2 +k] == FREE)
+				{
+					right++;
+				}
+				else
+				{
+					forwardRight = false;
+				}
+				k++;
+			}
+			
+			//if the two sides are big enough to pass, consider going forward
+			if((left + right) >= zoneMinOpen)
+			{
+				//see if the opening is centered
+				//it is not.
+				if( (left-right) > OFFCENTER	)
+				{
+					if (left > right)
+					{
+						outBound.turnLeft = true;
+					}
+					else
+					{
+						outBound.turnRight = true;
+					}
+				}
+				else //it is centered, and big enough
+				{
+					outBound.forward = true;
+				}
+				
+			}
+			//it simply cannot go forward
+			else
+			{
+				ROS_INFO("FORWARD BLOCKED");
+				outBound.backUp = true;
+			}
+		}//end of forward check
+	}//end of right check
+		
+	//one of the sides was checkable
+	if (count == zoneCount){
 		outBound.forward = true;
 	}
-	else 
+	else if (count > 0)
 	{
-		if(justBackedUp){
-			outBound.turnRight = true;
-			sleep = true;
-			justBackedUp = false;
-		}
-		else if(states[1] != FREE){
-			if(states[0] == FREE)
-				outBound.turnRight = true;
-			else 
-				outBound.turnLeft = true;
-			
-		}
-		else{
-			outBound.forward = true;
-			justWentForward = true;
-		}
-	
-		 
 		
+		if(fromRight)
+		{
+			ROS_INFO("GOING FROM RIGHT");
+			if(zoneAngleSize * count < (totalRange/6 *2))
+			{
+				//go forward
+				outBound.forward = true;
+			}
+			else 
+			{
+				outBound.turnLeft = true;
+			}
+		}
+		else if(!fromRight)
+		{
+			ROS_INFO("GOING FROM LEFT");
+			if(zoneAngleSize * count > (totalRange/6 * 4))
+			{
+				//go forward
+				outBound.forward = true;
+			}
+			else 
+			{
+				outBound.turnRight = true;
+			}
+		}
 	}
 	//checkable side
 		
 	commandPub.publish(outBound);
-	if(sleep){
-	sleep = false;
-	ros::Duration(0.5).sleep();
-	}
-	
+
 	ros::spinOnce();
 	loop_rate.sleep();
 }

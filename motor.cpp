@@ -23,8 +23,8 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10);
   
-	ros::Subscriber info_get = nh.subscribe("command", 100, getCommand);
-	ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 100);
+	ros::Subscriber info_get = nh.subscribe("command", 10, getCommand);
+	ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 10);
 	
 	while(ros::ok())
 	{
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 }
 void getCommand(const p3a_delta::command& msg)
 {
-	//ROS_INFO("\nFoward: %d\nLeft: %d\nRight: %d\n BackUp: %d\n", msg.forward, msg.turnLeft, msg.turnRight, msg.backUp);
+	ROS_INFO("\nFoward: %d\nLeft: %d\nRight: %d\n BackUp: %d", msg.forward, msg.turnLeft, msg.turnRight, msg.backUp);
 	
 	if(msg.turnLeft)
 	   turnDirection = 1;
@@ -77,6 +77,6 @@ geometry_msgs::Twist getTwistMsg()
           twist.angular.z = 0.0f;	
 	  break;
 	}
-	ROS_INFO("Linear x: %f \nAngular z: %f",twist.linear.x,twist.angular.z);
+	//ROS_INFO("Linear x: %f \nAngular z: %f",twist.linear.x,twist.angular.z);
 	return twist;
 }
