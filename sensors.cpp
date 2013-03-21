@@ -41,8 +41,9 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10); 
 	p3a_delta::zoneCount  outBound;
+	outBound.pointNum = now.ranges.size();
 	outBound.angleIncrement = now.angle_increment;
-	outBound.minScanDistance = MIN_SCAN_DIST;
+	outBound.minScanDist = MIN_SCAN_DIST;
   
 	ros::Subscriber info_get = nh.subscribe("scan", 500, loadLaser);
 	ros::Publisher info_pub1 = nh.advertise<p3a_delta::zoneCount>("zones", 50);
@@ -54,6 +55,18 @@ int main(int argc, char **argv)
 
 	while(ros::ok())
 	{
+		outBound.pointNum = now.ranges.size();
+		outBound.angleIncrement = now.angle_increment;
+		outBound.minScanDist = MIN_SCAN_DIST;
+		
+		//DON'T DO MATH IF YOU DON'T HAVE THESE THINGS
+		if (outBound.pointNum == 0)
+		{
+			ros::spinOnce();
+			loop_rate.sleep();
+			continue;
+		}
+		
 		//parse points
 		for (int i = 0; i < now.ranges.size(); i++)
 		{

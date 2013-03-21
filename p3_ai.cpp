@@ -72,18 +72,18 @@ ros::topic::waitForMessage<nav_msgs::Odometry>(std::string("odom"), n,ros::Durat
 ROS_INFO("STARTING LOOP");
 
 //how many zones are we talkin'
-int zoneCount = zones.zone.size();
-int zonePointSize = zones.pointNum / zoneCount;
-float zoneAngleSize = zonePointSize * zones.angleIncrement;
+int zoneCount;// = zones.zone.size();
+int zonePointSize;// = zones.pointNum / zoneCount;
+float zoneAngleSize;// = zonePointSize * zones.angleIncrement;
 vector<zoneStates> states;
-states.resize(zoneCount);
+//states.resize(zoneCount);
 
 //how many zones open do we need to go forward?
-float lsquared = zones.minScanDist * zones.minScanDist;
-float angleMinOpen = acos((robotWidth*robotWidth - 2 * lsquared)/(2 * lsquared));
-int zoneMinOpen = angleMinOpen / (zonePointSize * zones.angleIncrement);
-if (zoneMinOpen == 0)
-	zoneMinOpen = 1;
+float lsquared;// = zones.minScanDist * zones.minScanDist;
+float angleMinOpen;// = acos((robotWidth*robotWidth - 2 * lsquared)/(2 * lsquared));
+int zoneMinOpen;// = angleMinOpen / (zonePointSize * zones.angleIncrement);
+//if (zoneMinOpen == 0)
+//	zoneMinOpen = 1;
 	
 float totalRange = zones.pointNum * zones.angleIncrement;
 
@@ -100,6 +100,29 @@ int k = 0;
 
 while(ros::ok())
 {
+	ROS_INFO("GOT INTO LOOP %d", zoneCount);
+	zoneCount = zones.zone.size();
+	
+	if (zoneCount == 0)
+	{
+		ros::spinOnce();
+		loop_rate.sleep();
+		continue;
+	}
+	ROS_INFO("ESCAPED DEADLOCK");
+		
+	zonePointSize = zones.pointNum / zoneCount;
+	zoneAngleSize = zonePointSize * zones.angleIncrement;
+	if (states.size() != zoneCount)
+		states.resize(zoneCount);
+		
+	lsquared = zones.minScanDist * zones.minScanDist;
+	angleMinOpen = acos((robotWidth*robotWidth - 2 * lsquared)/(2 * lsquared));
+	zoneMinOpen = angleMinOpen / (zonePointSize * zones.angleIncrement);
+	if (zoneMinOpen == 0)
+		zoneMinOpen = 1;
+		
+	totalRange = zones.pointNum * zones.angleIncrement;
 
 	doNothing(outBound);
 	//process zones
@@ -135,6 +158,7 @@ while(ros::ok())
 	//the immediate right is blocked
 	if ( count == 0)
 	{
+		ROS_INFO("LEFT BLOCKED");
 		fromRight = false;
 		count = 0;
 		//search from right
@@ -150,6 +174,7 @@ while(ros::ok())
 		//shit, the right is blocked
 		if(count == 0)
 		{
+			ROS_INFO("RIGHT BLOCKED");
 			//forward maybe?
 			forwardRight = true;
 			forwardLeft = true;
@@ -203,6 +228,7 @@ while(ros::ok())
 			//it simply cannot go forward
 			else
 			{
+				ROS_INFO("FORWARD BLOCKED");
 				outBound.backUp = true;
 			}
 		}//end of forward check
@@ -214,6 +240,7 @@ while(ros::ok())
 		
 		if(fromRight)
 		{
+			ROS_INFO("GOING FROM RIGHT");
 			if(zoneAngleSize * count < (totalRange/6 *2))
 			{
 				//go forward
@@ -226,6 +253,7 @@ while(ros::ok())
 		}
 		else if(!fromRight)
 		{
+			ROS_INFO("GOING FROM LEFT");
 			if(zoneAngleSize * count > (totalRange/6 * 4))
 			{
 				//go forward
