@@ -40,22 +40,23 @@ int main(int argc, char **argv)
 void getCommand(const p3a_delta::command& msg)
 {
 	//ROS_INFO("\nFoward: %d\nLeft: %d\nRight: %d\n BackUp: %d\n", msg.forward, msg.turnLeft, msg.turnRight, msg.backUp);
-	if(msg.forward)
-	   turnDirection = 0;
-	else if(msg.turnLeft)
+	
+	if(msg.turnLeft)
 	   turnDirection = 1;
 	else if(msg.turnRight)
 	   turnDirection = 2;
 	else if(msg.backUp)
 	   turnDirection = 3;
-	else 
+	else if(msg.forward)
 	   turnDirection = 4;
+	else 
+	   turnDirection = 0;
 }
 geometry_msgs::Twist getTwistMsg()
 {
 	geometry_msgs::Twist twist;
 	switch(turnDirection){
-	case 0:
+	case 4:
 	  twist.linear.x = 0.25f;
           twist.angular.z = 0.0f;	
 	  break;
