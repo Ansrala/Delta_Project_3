@@ -31,3 +31,4 @@ rosbuild_genmsg()
 
 rosbuild_add_executable(sensor sensors.cpp)
 rosbuild_add_executable(AI p3_ai.cpp)
+rosbuild_add_executable(motor motor.cpp)
