@@ -13,7 +13,7 @@
 using namespace std;
 
 void getCommand(const p3a_delta::command& msg);
-geometry_msgs::Twist getTwistMsg(int turnDirection);
+geometry_msgs::Twist getTwistMsg();
 //0 forward,    1 left,   2 right,  3 back,  4 stop
 int turnDirection;
 int main(int argc, char **argv)
@@ -39,6 +39,7 @@ int main(int argc, char **argv)
 }
 void getCommand(const p3a_delta::command& msg)
 {
+	//ROS_INFO("\nFoward: %d\nLeft: %d\nRight: %d\n BackUp: %d\n", msg.forward, msg.turnLeft, msg.turnRight, msg.backUp);
 	if(msg.forward)
 	   turnDirection = 0;
 	else if(msg.turnLeft)
@@ -70,10 +71,11 @@ geometry_msgs::Twist getTwistMsg()
 	  twist.linear.x = -0.25f;
           twist.angular.z = 0.0f;	
 	  break;
-	case default:
+	default:
 	  twist.linear.x = 0.0f;
           twist.angular.z = 0.0f;	
 	  break;
 	}
+	ROS_INFO("Linear x: %f \nAngular z: %f",twist.linear.x,twist.angular.z);
 	return twist;
 }

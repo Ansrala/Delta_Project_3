@@ -2,13 +2,14 @@
 	<!--our nodes here-->
 	
 	
-<!--	<node name = "AI" pkg= "p2_delta" type = "AI"/> -->
-	<node name = "sensor" pkg = "p3a_delta" type = "sensor" output = "screen" />
-	<node name = "rviz" pkg = "rviz" type = "rviz" />
+	<node name = "AI" pkg= "p3a_delta" type = "AI"/>
+	<node name = "sensor" pkg = "p3a_delta" type = "sensor"  />
+	<node name = "motor" pkg = "p3a_delta" type = "motor" output ="screen" />
+	<!--<node name = "rviz" pkg = "rviz" type = "rviz" />
 	<node name = "mapper" pkg = "gmapping" type = "slam_gmapping" args = "scan:=base_scan"> 
 		<remap from = "scan" to = "base_scan"/>
 	</node>
-	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="-.02 0 0 0 0 0 base_link laser 100" />
+	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="-.02 0 0 0 0 0 base_link laser 100" />-->
 
 
 </launch>
