@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "p3_delta_ai");
   ros::NodeHandle n;
 
-  ros::Publisher commandPub = n.advertise<p3a_delta::command>("command", 10);
+  ros::Publisher commandPub = n.advertise<p3a_delta::command>("command", 0);
 
   p3a_delta::command outBound;
   
@@ -59,10 +59,10 @@ ros::Rate loop_rate(5);
 ros::topic::waitForMessage<nav_msgs::Odometry>(std::string("odom"), n,ros::Duration(30));
     geometry_msgs::Twist msg;
 
-	ros::Subscriber subz = n.subscribe("zones", 101, getCurrZones);
+	ros::Subscriber subz = n.subscribe("zones", 0, getCurrZones);
 
    //we listen a little faster than we publish, since we don't know when it will change
-    ros::Subscriber subc = n.subscribe("serializer/sensors", 10, checkSensorChange);
+    ros::Subscriber subc = n.subscribe("serializer/sensors", 0, checkSensorChange);
 	//['right_ir', 'left_ir', 'voltage', 'touch_1', 'touch_2'] 
 
 	
@@ -120,7 +120,7 @@ while(ros::ok())
 	//process zones
 	for ( int i = 0; i < zoneCount; i ++)
 	{
-		if( (zones.zone[i]/(float(zonePointSize))) >= TRIP_THRESHOLD)
+		if( (zones.zone[i]/(float(zonePointSize))) >= OCC_THRESHOLD)
 		{
 			states[i] = OCCUPIED;
 		}
@@ -187,7 +187,7 @@ while(ros::ok())
 	commandPub.publish(outBound);
 	if(sleep){
 	sleep = false;
-	ros::Duration(0.5).sleep();
+	ros::Duration(1.0).sleep();
 	}
 	
 	ros::spinOnce();

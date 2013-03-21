@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 			currentZone = i/ zoneSize;	
 
 			//is it in an acceptable range?
-			if (  now.ranges[i] > MIN_SCAN_DIST && now.ranges[i] < 0.35f)
+			if (  now.ranges[i] > MIN_SCAN_DIST && now.ranges[i] < 0.3f)
 			{
 				counts[currentZone] ++;
 			}		
